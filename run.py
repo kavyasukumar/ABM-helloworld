@@ -1,6 +1,6 @@
-# --- NEW: Import ChartModule ---
 from mesa.visualization.modules import NetworkModule, ChartModule
 from mesa.visualization.ModularVisualization import ModularServer
+from mesa.visualization.UserParam import Slider 
 from model import IndoreTransitModel
 
 def network_portrayal(G):
@@ -21,13 +21,13 @@ def network_portrayal(G):
         
         agents = node_data.get('agent', [])
         
-        waiting_commuters = [a for a in agents if type(a).__name__ == "CommuterAgent" and a.state == "waiting"]
+        waiting_commuters = [a for a in agents if type(a).__name__ == "CommuterAgent" and a.state in ["waiting", "walking_to_stop", "evaluating"]]
         queue_size = len(waiting_commuters)
         
         if queue_size > 0:
             color = '#0000ff' 
             size = min(3 + queue_size, 8) 
-            tooltip_text += f" | Queue: {queue_size}"
+            tooltip_text += f" | Queue/Walking: {queue_size}"
             
         buses = [a for a in agents if type(a).__name__ == "BusAgent"]
         
@@ -54,11 +54,12 @@ def network_portrayal(G):
             'label': tooltip_text
         })
         
+    # --- UPDATED: New Edge Styling ---
     for source, target in G.edges():
         portrayal['edges'].append({
             'source': source, 
             'target': target, 
-            'color': '#000000',
+            'color': '#333333',
             'width': 4
         })
         
@@ -66,23 +67,35 @@ def network_portrayal(G):
 
 network = NetworkModule(network_portrayal, 500, 500)
 
-# --- NEW: Create the Chart Modules ---
-chart_ridership = ChartModule([{"Label": "Total Ridership", "Color": "#2ca02c"}]) # Green
-chart_utilization = ChartModule([{"Label": "Avg Capacity Utilization (%)", "Color": "#1f77b4"}]) # Blue
-chart_lost = ChartModule([{"Label": "Lost Riders", "Color": "#d62728"}]) # Red
-
-# --- NEW: A single combined ChartModule ---
 combined_chart = ChartModule([
-    {"Label": "Waiting", "Color": "#1f77b4"},   # Blue line for waiting in queue
-    {"Label": "In Bus", "Color": "#2ca02c"},    # Green line for riding
-    {"Label": "Lost Riders", "Color": "#d62728"}       # Red line for abandoned
+    {"Label": "Waiting", "Color": "#1f77b4"},   
+    {"Label": "In Bus", "Color": "#2ca02c"},    
+    {"Label": "Lost", "Color": "#d62728"}       
 ])
 
-# --- UPDATED: Add charts to the server ---
+model_params = {
+    "num_commuters": Slider(
+        "Total Commuters", 
+        value=100,       
+        min_value=10,    
+        max_value=1000,  
+        step=10,         
+        description="Total number of commuters in Indore"
+    ),
+    "num_buses": Slider(
+        "BRTS Buses", 
+        value=5,         
+        min_value=1,     
+        max_value=50,    
+        step=1,          
+        description="Number of buses operating on the corridor"
+    )
+}
+
 server = ModularServer(IndoreTransitModel,
-                       [network, combined_chart, chart_ridership, chart_utilization, chart_lost],
+                       [network, combined_chart],
                        "Indore Bus Ridership Model",
-                       {"num_commuters": 100, "num_buses": 5})
+                       model_params)
 
 server.port = 8521 
 server.launch()
