@@ -1,8 +1,5 @@
-import os
-import tornado.web
-import json
-from mesa.visualization.modules import NetworkModule
-from mesa.visualization.ModularVisualization import ModularServer, VisualizationElement
+from mesa.visualization.modules import NetworkModule, ChartModule
+from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import Slider, Checkbox 
 from model import IndoreTransitModel
 
@@ -57,7 +54,6 @@ def network_portrayal(G):
         is_route_node = node_data.get('is_route_node', False)
         is_bus_stop = node_data.get('is_bus_stop', False)
         
-        # Keep inactive stops completely invisible
         if is_route_node:
             base_nodes.append({
                 'id': node_id, 
@@ -114,7 +110,6 @@ def network_portrayal(G):
                 'width': 4 
             })
         else:
-            # --- UPDATED: Draw inactive roads as faint background lines ---
             portrayal['edges'].append({
                 'source': source, 
                 'target': target, 
@@ -126,50 +121,11 @@ def network_portrayal(G):
 
 network = NetworkModule(network_portrayal, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-class StackedAreaChart(VisualizationElement):
-    # --- STEP 1: Empty this out so Mesa doesn't create a broken local link ---
-    package_includes = [] 
-    local_includes = ["StackedAreaChartModule.js"] 
-
-    def __init__(self, series, canvas_height=250, canvas_width=600, data_collector_name="datacollector"):
-        self.series = series
-        self.canvas_height = canvas_height
-        self.canvas_width = canvas_width
-        self.data_collector_name = data_collector_name
-        
-        series_json = json.dumps(self.series)
-        
-        # --- STEP 2: Manually inject the script tag into the HTML head ---
-        # This bypasses Mesa's path-prepending logic entirely.
-        self.js_code = f"""
-        (function() {{
-            if (!document.getElementById('chart-js-cdn')) {{
-                var script = document.createElement('script');
-                script.id = 'chart-js-cdn';
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js';
-                document.head.appendChild(script);
-            }}
-            // Now initialize your custom module
-            window.myChart = new StackedAreaChartModule({series_json}, {self.canvas_width}, {self.canvas_height});
-        }})();
-        """
-
-    def render(self, model):
-        current_values = []
-        data_collector = getattr(model, self.data_collector_name)
-        for s in self.series:
-            name = s["Label"]
-            try:
-                val = data_collector.model_vars[name][-1]
-            except (IndexError, KeyError):
-                val = 0
-            current_values.append(val)
-        return current_values
-
-combined_chart = StackedAreaChart([
-    {"Label": "Waiting", "Color": "rgba(31, 119, 180, 0.7)"},   
-    {"Label": "In Bus", "Color": "rgba(44, 160, 44, 0.7)"},     
-    {"Label": "Lost", "Color": "rgba(214, 39, 40, 0.7)"}        
+# --- RESTORED: Standard Mesa ChartModule ---
+combined_chart = ChartModule([
+    {"Label": "Waiting", "Color": "#1f77b4"},   
+    {"Label": "In Bus", "Color": "#2ca02c"},    
+    {"Label": "Lost", "Color": "#d62728"}       
 ])
 
 model_params = {
@@ -192,23 +148,6 @@ server = ModularServer(IndoreTransitModel,
                        [network, combined_chart],
                        "Indore Bus Ridership Model",
                        model_params)
-
-# Get the absolute path to your current directory
-current_path = os.path.dirname(os.path.realpath(__file__))
-
-# Create a custom handler to serve your JS file
-class JSHandler(tornado.web.StaticFileHandler):
-    def set_extra_headers(self, path):
-        self.set_header("Cache-Control", "no-cache, no-store, must-revalidate")
-
-# Define the server
-server = ModularServer(IndoreTransitModel,
-                       [network, combined_chart],
-                       "Indore Bus Ridership Model",
-                       model_params)
-
-# Manually add the route so the browser can find your JS file
-server.handlers.append((r"/(StackedAreaChartModule.js)", JSHandler, {"path": current_path}))
 
 server.port = 8521 
 server.launch()
