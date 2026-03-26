@@ -1,0 +1,15 @@
+# Core Agent-Based Modeling Framework
+mesa<3.0
+
+# Network and Spatial Data
+networkx>=3.0
+osmnx>=1.3.0
+
+# Data Manipulation and Analysis
+pandas>=2.0.0
+
+# Plotting and Visualization
+matplotlib>=3.7.0
+
+# Web Application/Deployment (For Step 6)
+streamlit>=1.25.0
