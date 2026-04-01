@@ -113,7 +113,7 @@ def network_portrayal(G):
             portrayal['edges'].append({
                 'source': source, 
                 'target': target, 
-                'color': '#eeeeee', 
+                'color': '#cccccc', 
                 'width': 1 
             })
         

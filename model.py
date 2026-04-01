@@ -23,7 +23,7 @@ class IndoreTransitModel(mesa.Model):
         ]
         
         print("Downloading Indore street data...")
-        self.G = ox.graph_from_address('Palasia Square, Indore, India', dist=500, network_type='drive')
+        self.G = ox.graph_from_address('Palasia Square, Indore, India', dist=1000, network_type='drive')
         self.G = nx.Graph(self.G) 
         self.G = nx.convert_node_labels_to_integers(self.G)
         
