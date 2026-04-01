@@ -123,7 +123,7 @@ network = NetworkModule(network_portrayal, CANVAS_WIDTH, CANVAS_HEIGHT)
 
 # --- RESTORED: Standard Mesa ChartModule ---
 combined_chart = ChartModule([
-    {"Label": "Waiting", "Color": "#1f77b4"},   
+    {"Label": "Waiting", "Color": "#f4d508"},   
     {"Label": "In Bus", "Color": "#2ca02c"},    
     {"Label": "Lost", "Color": "#d62728"}       
 ])
