@@ -1,4 +1,4 @@
-from mesa.visualization.modules import NetworkModule, ChartModule
+from mesa.visualization.modules import NetworkModule, ChartModule, TextElement
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import Slider, Checkbox 
 from model import IndoreTransitModel
@@ -6,6 +6,16 @@ from model import IndoreTransitModel
 CANVAS_WIDTH = 600
 CANVAS_HEIGHT = 600
 PADDING = 30 
+
+class TimeTextElement(TextElement):
+    def __init__(self):
+        pass
+
+    def render(self, model):
+        return f"Current Simulation Time: {model.format_time()}"
+
+# 1. Instantiate the new text element
+time_text = TimeTextElement()
 
 def network_portrayal(G):
     portrayal = dict()
@@ -121,7 +131,7 @@ def network_portrayal(G):
 
 network = NetworkModule(network_portrayal, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-# --- RESTORED: Standard Mesa ChartModule ---
+
 combined_chart = ChartModule([
     {"Label": "Waiting", "Color": "#f4d508"},   
     {"Label": "In Bus", "Color": "#2ca02c"},    
@@ -145,7 +155,7 @@ model_params = {
 }
 
 server = ModularServer(IndoreTransitModel,
-                       [network, combined_chart],
+                       [ network, time_text, combined_chart],
                        "Indore Bus Ridership Model",
                        model_params)
 
